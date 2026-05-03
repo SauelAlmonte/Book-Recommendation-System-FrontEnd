@@ -6,6 +6,14 @@ Suited as a portfolio piece: readable structure, typed API boundary, guarded env
 
 ---
 
+## Live demo
+
+- **App (Vercel):** [Book-Recommendation-System-FrontEnd](https://book-recommendation-system-front-en.vercel.app/)
+- **Backend source (GitHub):** [Book-Recommendation-System-BackEnd](https://github.com/SauelAlmonte/Book-Recommendation-System-BackEnd)
+- **API origin:** [Render](https://book-recommendation-api-hfh8.onrender.com)
+
+---
+
 ## Stack
 
 | Area | Choice |
