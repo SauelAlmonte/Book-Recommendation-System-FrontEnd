@@ -51,6 +51,20 @@ function probeDetailsForScreenReader(health: HealthResult | null, ready: ReadyRe
   return parts.join(". ");
 }
 
+function normalizeCategoryInput(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return "All";
+  }
+
+  // Backend validates an exact category token; normalize common free-text input.
+  return trimmed
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
+}
+
 export function RecommendationExplorer(): ReactElement {
   const reduceMotion = Boolean(useReducedMotion());
 
@@ -120,29 +134,46 @@ export function RecommendationExplorer(): ReactElement {
 
     void (async () => {
       try {
+        const normalizedCategory = normalizeCategoryInput(category);
+
         const result = await fetchRecommendations({
           query: trimmed,
-          category: category.trim().length > 0 ? category.trim() : "All",
+          category: normalizedCategory,
           tone,
           limit: limitInput.trim().length > 0 ? Number.parseInt(limitInput, 10) : 16,
         });
 
-        if (!result.ok) {
+        const invalidCategory =
+          !result.ok &&
+          result.error.status === 422 &&
+          result.error.message.toLowerCase().includes("invalid category");
+
+        const finalResult =
+          invalidCategory && normalizedCategory !== "All"
+            ? await fetchRecommendations({
+                query: trimmed,
+                category: "All",
+                tone,
+                limit: limitInput.trim().length > 0 ? Number.parseInt(limitInput, 10) : 16,
+              })
+            : result;
+
+        if (!finalResult.ok) {
           setSearch({
             status: "error",
-            message: result.error.status
-              ? `${result.error.message} (HTTP ${String(result.error.status)})`
-              : result.error.message,
+            message: finalResult.error.status
+              ? `${finalResult.error.message} (HTTP ${String(finalResult.error.status)})`
+              : finalResult.error.message,
           });
           return;
         }
 
-        if (result.data.length === 0) {
+        if (finalResult.data.length === 0) {
           setSearch({ status: "empty" });
           return;
         }
 
-        setSearch({ status: "success", books: result.data });
+        setSearch({ status: "success", books: finalResult.data });
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Search failed.";
         setSearch({ status: "error", message });
