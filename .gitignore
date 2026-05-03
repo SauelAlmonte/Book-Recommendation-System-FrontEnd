@@ -60,3 +60,5 @@ pnpm-debug.log*
 # TypeScript
 # =============================================================================
 *.tsbuildinfo
+.vercel
+.env*.local
